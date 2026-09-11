@@ -1,7 +1,20 @@
 import app from './app.js'
+import { env } from "./config/env.js";
+import { pool } from "./db/client.js";
 
-const PORT = process.env.PORT || 5000;
+const startServer = async (): Promise<void> => {
+  try {
+    await pool.query("SELECT 1");
 
-app.listen(PORT, () => {
-    console.log(`API working on port ${PORT}`);
-});
+    console.log("PostgreSQL connection successful");
+
+    app.listen(env.PORT, () => {
+      console.log(`WorkHub API running on port ${env.PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+void startServer();
