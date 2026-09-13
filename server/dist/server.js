@@ -1,11 +1,18 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+import app from './app.js';
+import { env } from "./config/env.js";
+import { pool } from "./db/client.js";
+const startServer = async () => {
+    try {
+        await pool.query("SELECT 1");
+        console.log("PostgreSQL connection successful");
+        app.listen(env.PORT, () => {
+            console.log(`WorkHub API running on port ${env.PORT}`);
+        });
+    }
+    catch (error) {
+        console.error("Failed to start server:", error);
+        process.exit(1);
+    }
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-const app_js_1 = __importDefault(require("./app.js"));
-const PORT = process.env.PORT || 5000;
-app_js_1.default.listen(PORT, () => {
-    console.log(`API working on port ${PORT}`);
-});
+void startServer();
 //# sourceMappingURL=server.js.map
