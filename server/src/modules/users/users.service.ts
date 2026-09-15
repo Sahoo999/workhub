@@ -48,3 +48,7 @@ export const createUser = async (
     throw error;
   }
 };
+
+export const findById = async (id: string) => {
+  return usersRepository.findUserById(id);
+};

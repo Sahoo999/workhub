@@ -30,3 +30,20 @@ export const createUser = async (
 
   return rows[0];
 };
+
+
+export const findUserById = async (
+  id: string,
+): Promise<UserRecord | null> => {
+  const { rows } = await pool.query<UserRecord>(
+    `
+      SELECT id, name, email, password_hash, created_at, updated_at
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [id],
+  );
+
+  return rows[0] ?? null;
+};
