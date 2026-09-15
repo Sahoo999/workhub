@@ -3,6 +3,11 @@ declare global {
     interface Request {
       user?: {
         id: string;
+        };
+        
+         workspace?: {
+        id: string;
+        role: string;
       };
     }
   }
