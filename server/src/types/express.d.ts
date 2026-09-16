@@ -9,6 +9,12 @@ declare global {
         id: string;
         role: string;
       };
+
+      project?: {
+  id: string;
+  workspaceId: string;
+  role: string;
+};
     }
   }
 }

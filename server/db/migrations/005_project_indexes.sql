@@ -1,0 +1,1 @@
+CREATE INDEX idx_projects_workspace_id ON projects (workspace_id);

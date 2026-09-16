@@ -7,6 +7,7 @@ import { notFoundHandler } from "./middleware/not-found.js";
 
 import authRouter from "./modules/auth/auth.routes.js";
 import workspacesRouter from "./modules/workspaces/workspaces.routes.js";
+import projectsRouter from "./modules/projects/projects.routes.js";
 
 const app = express();
 
@@ -23,7 +24,7 @@ app.get("/api/v1/health", (_req, res) => {
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", usersRouter);
-
+app.use("/api/v1/projects", projectsRouter);
 app.use("/api/v1/workspaces", workspacesRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
