@@ -10,6 +10,8 @@ import workspacesRouter from "./modules/workspaces/workspaces.routes.js";
 import projectsRouter from "./modules/projects/projects.routes.js";
 import tasksRouter from "./modules/tasks/tasks.routes.js";
 
+import commentsRouter from "./modules/comments/comments.routes.js";
+
 const app = express();
 
 app.use(express.json());
@@ -28,6 +30,7 @@ app.use("/api/v1/users", usersRouter);
 app.use("/api/v1/projects", projectsRouter);
 app.use("/api/v1/workspaces", workspacesRouter);
 app.use("/api/v1", tasksRouter);
+app.use("/api/v1", commentsRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
