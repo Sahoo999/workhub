@@ -9,11 +9,27 @@ import * as workspaceRepository from "../workspaces/workspaces.repository.js";
 
 export const createTask = async (
   input: unknown,
-  projectId: string,
+    projectId: string,
+  workspaceId: string,
   userId: string,
 ) => {
     const data = createTaskSchema.parse(input);
     
+    if (data.assignedTo) {
+    const membership =
+      await workspaceRepository.findMembership(
+        workspaceId,
+        data.assignedTo,
+      );
+
+    if (!membership) {
+      throw new AppError(
+        "Assigned user is not a member of this workspace",
+        400,
+        "INVALID_ASSIGNEE",
+      );
+    }
+  }
 
   return tasksRepository.createTask(
     projectId,

@@ -6,7 +6,6 @@ import type {
 
 import { AppError } from "../../utils/app-error.js";
 import * as tasksService from "./tasks.service.js";
-import { string } from "zod";
 
 export const createTask = async (
   req: Request,
@@ -28,6 +27,7 @@ export const createTask = async (
     const task = await tasksService.createTask(
       req.body,
       req.project.id,
+      req.project.workspaceId,
       req.user.id,
     );
 
