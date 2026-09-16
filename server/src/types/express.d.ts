@@ -11,10 +11,18 @@ declare global {
       };
 
       project?: {
+     id: string;
+     workspaceId: string;
+      role: string;
+      };
+      
+      task?: {
   id: string;
+  projectId: string;
   workspaceId: string;
   role: string;
-};
+      };
+      
     }
   }
 }
