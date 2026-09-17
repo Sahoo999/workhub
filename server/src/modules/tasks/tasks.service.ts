@@ -8,6 +8,9 @@ import {
 import * as workspaceRepository from "../workspaces/workspaces.repository.js";
 import * as activityRepository from "../activity/activity.repository.js";
 
+import * as notificationsService
+  from "../notifications/notifications.service.js";
+
 export const createTask = async (
   input: unknown,
     projectId: string,
@@ -44,7 +47,19 @@ export const createTask = async (
       ? new Date(data.dueDate)
       : null,
   },
-);
+  );
+  if (data.assignedTo) {
+  await notificationsService.createNotification(
+    data.assignedTo,
+    {
+      type: "TASK_ASSIGNED",
+      title: "You were assigned a task",
+      message: `You were assigned "${task.title}"`,
+      entityType: "TASK",
+      entityId: task.id,
+    },
+  );
+  }
 
 await activityRepository.createActivity({
   workspaceId,

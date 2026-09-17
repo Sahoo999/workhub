@@ -1,42 +1,101 @@
 import bcrypt from "bcryptjs";
-import { createHash, randomBytes } from "node:crypto";
 
 import { AppError } from "../../utils/app-error.js";
 import {
   signAccessToken,
-  signRefreshToken,
 } from "../../utils/jwt.js";
+
+import {
+  generateRefreshToken,
+  getRefreshTokenExpiry,
+  hashRefreshToken,
+} from "../../utils/refresh-token.js";
+
+import { pool } from "../../db/client.js";
+
 import * as usersRepository from "../users/users.repository.js";
 import * as authRepository from "./auth.repository.js";
+
 import {
   loginSchema,
   registerSchema,
 } from "./auth.schema.js";
 
-const hashRefreshToken = (token: string): string => {
-  return createHash("sha256")
-    .update(token)
-    .digest("hex");
+/* =========================
+   REFRESH TOKEN
+========================= */
+
+export const refresh = async (
+  refreshToken: string,
+) => {
+  const tokenHash =
+    hashRefreshToken(refreshToken);
+
+  const storedToken =
+    await authRepository.findValidRefreshToken(
+      tokenHash,
+    );
+
+  if (!storedToken) {
+    throw new AppError(
+      "Invalid or expired refresh token",
+      401,
+      "INVALID_REFRESH_TOKEN",
+    );
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const newRefreshToken =
+      generateRefreshToken();
+
+    // Revoke old refresh token
+    await authRepository.revokeRefreshToken(
+      client,
+      storedToken.id,
+    );
+
+    // Store new refresh token
+    await authRepository.createRefreshTokenTx(
+      client,
+      storedToken.user_id,
+      hashRefreshToken(newRefreshToken),
+      getRefreshTokenExpiry(),
+    );
+
+    await client.query("COMMIT");
+
+    return {
+      accessToken: signAccessToken(
+        storedToken.user_id,
+      ),
+      refreshToken: newRefreshToken,
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
-const createRefreshTokenValue = (): string => {
-  return randomBytes(48).toString("hex");
-};
+/* =========================
+   REGISTER
+========================= */
 
-const getRefreshTokenExpiry = (): Date => {
-  const date = new Date();
+export const register = async (
+  input: unknown,
+) => {
+  const data =
+    registerSchema.parse(input);
 
-  date.setDate(date.getDate() + 7);
-
-  return date;
-};
-
-export const register = async (input: unknown) => {
-  const data = registerSchema.parse(input);
-
-  const existingUser = await authRepository.findUserByEmail(
-    data.email,
-  );
+  const existingUser =
+    await authRepository.findUserByEmail(
+      data.email,
+    );
 
   if (existingUser) {
     throw new AppError(
@@ -46,17 +105,21 @@ export const register = async (input: unknown) => {
     );
   }
 
-  const passwordHash = await bcrypt.hash(data.password, 12);
+  const passwordHash =
+    await bcrypt.hash(data.password, 12);
 
-  const user = await usersRepository.createUser(
-    data.name,
-    data.email,
-    passwordHash,
-  );
+  const user =
+    await usersRepository.createUser(
+      data.name,
+      data.email,
+      passwordHash,
+    );
 
-  const accessToken = signAccessToken(user.id);
+  const accessToken =
+    signAccessToken(user.id);
 
-  const refreshToken = createRefreshTokenValue();
+  const refreshToken =
+    generateRefreshToken();
 
   await authRepository.createRefreshToken(
     user.id,
@@ -70,17 +133,26 @@ export const register = async (input: unknown) => {
       name: user.name,
       email: user.email,
     },
+
     accessToken,
     refreshToken,
   };
 };
 
-export const login = async (input: unknown) => {
-  const data = loginSchema.parse(input);
+/* =========================
+   LOGIN
+========================= */
 
-  const user = await authRepository.findUserByEmail(
-    data.email,
-  );
+export const login = async (
+  input: unknown,
+) => {
+  const data =
+    loginSchema.parse(input);
+
+  const user =
+    await authRepository.findUserByEmail(
+      data.email,
+    );
 
   if (!user) {
     throw new AppError(
@@ -90,10 +162,11 @@ export const login = async (input: unknown) => {
     );
   }
 
-  const passwordMatches = await bcrypt.compare(
-    data.password,
-    user.password_hash,
-  );
+  const passwordMatches =
+    await bcrypt.compare(
+      data.password,
+      user.password_hash,
+    );
 
   if (!passwordMatches) {
     throw new AppError(
@@ -103,9 +176,11 @@ export const login = async (input: unknown) => {
     );
   }
 
-  const accessToken = signAccessToken(user.id);
+  const accessToken =
+    signAccessToken(user.id);
 
-  const refreshToken = createRefreshTokenValue();
+  const refreshToken =
+    generateRefreshToken();
 
   await authRepository.createRefreshToken(
     user.id,
@@ -119,7 +194,37 @@ export const login = async (input: unknown) => {
       name: user.name,
       email: user.email,
     },
+
     accessToken,
     refreshToken,
   };
+};
+
+/* =========================
+   LOGOUT
+========================= */
+
+export const logout = async (
+  refreshToken: string,
+): Promise<void> => {
+  const tokenHash =
+    hashRefreshToken(refreshToken);
+
+  const storedToken =
+    await authRepository.findValidRefreshToken(
+      tokenHash,
+    );
+
+  if (!storedToken) {
+    return;
+  }
+
+  await pool.query(
+    `
+      UPDATE refresh_tokens
+      SET revoked_at = NOW()
+      WHERE id = $1
+    `,
+    [storedToken.id],
+  );
 };
