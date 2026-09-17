@@ -6,6 +6,7 @@ import {
   updateTaskSchema,
 } from "./tasks.schema.js";
 import * as workspaceRepository from "../workspaces/workspaces.repository.js";
+import * as activityRepository from "../activity/activity.repository.js";
 
 export const createTask = async (
   input: unknown,
@@ -30,21 +31,33 @@ export const createTask = async (
       );
     }
   }
+  const task = await tasksRepository.createTask(
+  projectId,
+  userId,
+  {
+    title: data.title,
+    description: data.description ?? null,
+    status: data.status,
+    priority: data.priority,
+    assignedTo: data.assignedTo ?? null,
+    dueDate: data.dueDate
+      ? new Date(data.dueDate)
+      : null,
+  },
+);
 
-  return tasksRepository.createTask(
-    projectId,
-    userId,
-    {
-      title: data.title,
-      description: data.description ?? null,
-      status: data.status,
-      priority: data.priority,
-      assignedTo: data.assignedTo ?? null,
-      dueDate: data.dueDate
-        ? new Date(data.dueDate)
-        : null,
-    },
-  );
+await activityRepository.createActivity({
+  workspaceId,
+  actorId: userId,
+  entityType: "TASK",
+  entityId: task.id,
+  action: "TASK_CREATED",
+  metadata: {
+    title: task.title,
+  },
+});
+
+return task;
 };
 
 export const getTask = async (taskId: string) => {
@@ -101,6 +114,8 @@ export const getTasks = async (
 export const updateTask = async (
   taskId: string,
   input: unknown,
+  workspaceId: string,
+  userId: string,
 ) => {
   const data = updateTaskSchema.parse(input);
 
@@ -115,7 +130,8 @@ export const updateTask = async (
     );
   }
 
-  return tasksRepository.updateTask(taskId, {
+  const updated =
+  await tasksRepository.updateTask(taskId, {
     title: data.title ?? existing.title,
     description:
       data.description === undefined
@@ -130,8 +146,30 @@ export const updateTask = async (
     dueDate:
       data.dueDate === undefined
         ? existing.due_date
-        : data.dueDate
-        ? new Date(data.dueDate)
-        : null,
+        : new Date(data.dueDate),
   });
+
+  if (!updated) {
+  throw new AppError(
+    "Task could not be updated",
+    500,
+    "TASK_UPDATE_FAILED",
+  );
+}
+
+await activityRepository.createActivity({
+  workspaceId,
+  actorId: userId,
+  entityType: "TASK",
+  entityId: taskId,
+  action: "TASK_UPDATED",
+  metadata: {
+    oldStatus: existing.status,
+    newStatus: updated.status,
+    oldPriority: existing.priority,
+    newPriority: updated.priority,
+  },
+});
+
+return updated;
 };

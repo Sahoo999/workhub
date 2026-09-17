@@ -120,9 +120,22 @@ export const updateTask = async (
       return;
     }
 
+    if (!req.user || !req.task) {
+  next(
+    new AppError(
+      "Task context missing",
+      403,
+      "TASK_CONTEXT_MISSING",
+    ),
+  );
+  return;
+}
+
     const task = await tasksService.updateTask(
       taskId,
       req.body,
+      req.task.workspaceId,
+      req.user.id,
     );
 
     res.status(200).json({

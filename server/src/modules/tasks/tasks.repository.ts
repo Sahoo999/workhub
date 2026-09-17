@@ -25,7 +25,7 @@ export const createTask = async (
     assignedTo: string | null;
     dueDate: Date | null;
   },
-): Promise<TaskRecord | undefined> => {
+): Promise<TaskRecord> => {
   const { rows } = await pool.query<TaskRecord>(
     `
       INSERT INTO tasks (
@@ -53,7 +53,13 @@ export const createTask = async (
     ],
   );
 
-    return rows[0] ?? undefined;
+    const task = rows[0];
+
+if (!task) {
+  throw new Error("Task was not created");
+}
+
+return task;
 };
 
 export const findTaskById = async (
@@ -72,20 +78,25 @@ export const findTaskById = async (
   return rows[0] ?? null;
 };
 
+type TaskSortColumn =
+  | "created_at"
+  | "due_date"
+  | "priority";
+
+type SortOrder = "asc" | "desc";
+
 export const listTasks = async (
   projectId: string,
-  // New fixed signature in tasks.repository.ts
-options: {
+  options: {
   offset: number;
   limit: number;
   status?: string | undefined;
   priority?: string | undefined;
   assignedTo?: string | undefined;
   search?: string | undefined;
-  sortBy: string;
-  order: "asc" | "desc";
-}
-,
+  sortBy: TaskSortColumn;
+  order: SortOrder;
+},
 ): Promise<TaskRecord[]> => {
   const values: unknown[] = [projectId];
 
@@ -160,7 +171,13 @@ export const countTasks = async (
     [projectId],
   );
 
-  return Number(rows[0]?.count);
+  const row = rows[0];
+
+if (!row) {
+  throw new Error("Failed to count tasks");
+}
+
+return Number(row.count);
 };
 
 export const updateTask = async (
@@ -173,7 +190,7 @@ export const updateTask = async (
     assignedTo: string | null;
     dueDate: Date | null;
   },
-): Promise<TaskRecord | null> => {
+): Promise<TaskRecord> => {
   const { rows } = await pool.query<TaskRecord>(
     `
       UPDATE tasks
@@ -199,5 +216,11 @@ export const updateTask = async (
     ],
   );
 
-  return rows[0] ?? null;
+  const task = rows[0];
+
+if (!task) {
+  throw new Error("Task was not updated");
+}
+
+return task;
 };

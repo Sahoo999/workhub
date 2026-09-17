@@ -14,6 +14,7 @@ import commentsRouter from "./modules/comments/comments.routes.js";
 
 import labelsRouter from "./modules/labels/labels.routes.js";
 
+import activityRouter from "./modules/activity/activity.routes.js";
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use("/api/v1/workspaces", workspacesRouter);
 app.use("/api/v1", tasksRouter);
 app.use("/api/v1", commentsRouter);
 app.use("/api/v1", labelsRouter);
+app.use("/api/v1", activityRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
