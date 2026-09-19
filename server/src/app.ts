@@ -1,5 +1,9 @@
 import express from "express";
+import cors from "cors"
+
 import cookieParser from "cookie-parser";
+
+import { env } from "./config/env.js";
 
 import usersRouter from "./modules/users/users.routes.js";
 import { errorHandler } from "./middleware/error-handler.js";
@@ -18,6 +22,14 @@ import activityRouter from "./modules/activity/activity.routes.js";
 import notificationsRouter from "./modules/notifications/notifications.routes.js";
 
 const app = express();
+
+// CORS setup
+app.use(
+  cors({
+    origin: env.CORS_ORIGIN,
+    credentials: true,
+  }),
+);
 
 app.use(express.json());
 app.use(cookieParser());

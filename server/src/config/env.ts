@@ -12,13 +12,15 @@ const envSchema = z.object({
 
   JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
+
+  CORS_ORIGIN: z.string().min(1, "CORS_ORIGIN is required"),
 });
 
 const result = envSchema.safeParse(process.env);
 
 if (!result.success) {
   console.error("Invalid environment variables:");
-  console.error(result.error.format());
+  console.error(result.error!.format());
 
   process.exit(1);
 }

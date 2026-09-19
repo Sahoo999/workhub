@@ -12,7 +12,7 @@ export default async function ApiTestPage() {
   return (
     <main>
       <h1>Backend Connection</h1>
-      <p>{data.message}</p>
+      <p>{data.success}</p>
     </main>
   );
 } 
