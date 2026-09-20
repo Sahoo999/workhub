@@ -20,6 +20,16 @@ export interface ApiErrorResponse {
   };
 }
 
+let onUnauthorized:
+  | (() => Promise<string | null>)
+  | null = null;
+
+export const setUnauthorizedHandler = (
+  handler: () => Promise<string | null>,
+) => {
+  onUnauthorized = handler;
+};
+
 export class ApiError extends Error {
   public readonly status: number;
   public readonly code: string;
@@ -48,11 +58,15 @@ const request = async <T>(
   path: string,
   options: RequestOptions = {},
   accessToken?: string,
+  retry = true,
 ): Promise<ApiSuccess<T>> => {
   const headers = new Headers(options.headers);
 
   if (options.body !== undefined) {
-    headers.set("Content-Type", "application/json");
+    headers.set(
+      "Content-Type",
+      "application/json",
+    );
   }
 
   if (accessToken) {
@@ -68,7 +82,7 @@ const request = async <T>(
       ...options,
       headers,
       credentials: "include",  // tells the browser to automatically attach security cookies
-                            //  and session tokens whenever you communicate with your backend server
+                               //  and session tokens whenever you communicate with your backend server
       body:
         options.body !== undefined
           ? JSON.stringify(options.body)
@@ -78,13 +92,34 @@ const request = async <T>(
 
   const json = await response.json();
 
+  if (
+    response.status === 401 &&
+    retry &&
+    onUnauthorized
+  ) {
+    const newToken =
+      await onUnauthorized();
+
+    if (newToken) {
+      return request<T>(
+        path,
+        options,
+        newToken,
+        false,
+      );
+    }
+  }
+
   if (!response.ok) {
-    const error = json as ApiErrorResponse;
+    const error =
+      json as ApiErrorResponse;
 
     throw new ApiError(
       response.status,
-      error.error?.code ?? "UNKNOWN_ERROR",
-      error.error?.message ?? "Request failed",
+      error.error?.code ??
+        "UNKNOWN_ERROR",
+      error.error?.message ??
+        "Request failed",
       error.error?.details,
     );
   }
@@ -109,6 +144,7 @@ export const api = {
     path: string,
     body: unknown,
     accessToken?: string,
+    retry = true,
   ) =>
     request<T>(
       path,
@@ -117,6 +153,7 @@ export const api = {
         body,
       },
       accessToken,
+      retry,
     ),
 
   patch: <T>(

@@ -23,3 +23,12 @@ export const registerFormSchema = z
 export type RegisterFormData = z.infer<
   typeof registerFormSchema
 >;
+
+export const loginFormSchema = z.object({
+  email: z.string().trim().email(),
+  password: z.string().min(1),
+});
+
+export type LoginFormData = z.infer<
+  typeof loginFormSchema
+>;

@@ -1,8 +1,14 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 
-import { api } from "@/lib/api";
+import { api, setUnauthorizedHandler, } from "@/lib/api";
 
 interface AuthUser {
   id: string;
@@ -14,12 +20,20 @@ interface AuthContextValue {
   user: AuthUser | null;
   accessToken: string | null;
   loading: boolean;
+
   register: (
     name: string,
     email: string,
     password: string,
   ) => Promise<void>;
+
+  login: (
+    email: string,
+    password: string,
+  ) => Promise<void>;
+
   refreshSession: () => Promise<void>;
+
   logout: () => Promise<void>;
 }
 
@@ -39,6 +53,18 @@ export function AuthProvider({
 
   const [loading, setLoading] =
     useState(true);
+
+  const loadCurrentUser = useCallback(
+  async (token: string) => {
+    const response = await api.get<AuthUser>(
+      "/users/me",
+      token,
+    );
+
+    setUser(response.data);
+  },
+  [],
+);
 
   const register = async (
     name: string,
@@ -60,21 +86,47 @@ export function AuthProvider({
     );
   };
 
-  const refreshSession = async () => {
-    try {
-      const response =
-        await api.post<{
-          accessToken: string;
-        }>("/auth/refresh", {});
+  const login = async (
+    email: string,
+    password: string,
+  ) => {
+    const response = await api.post<{
+      user: AuthUser;
+      accessToken: string;
+    }>("/auth/login", {
+      email,
+      password,
+    });
 
-      setAccessToken(
-        response.data.accessToken,
-      );
-    } catch {
-      setAccessToken(null);
-      setUser(null);
-    }
+    setUser(response.data.user);
+    setAccessToken(
+      response.data.accessToken,
+    );
   };
+
+  const refreshSession = useCallback(async () => {
+  try {
+    const response =
+      await api.post<{
+        accessToken: string;
+      }>(
+        "/auth/refresh",
+        {},
+        undefined,
+        false,
+      );
+
+    const token =
+      response.data.accessToken;
+
+    setAccessToken(token);
+
+    await loadCurrentUser(token);
+  } catch {
+    setAccessToken(null);
+    setUser(null);
+  }
+}, [loadCurrentUser]);
 
   const logout = async () => {
     try {
@@ -92,7 +144,39 @@ export function AuthProvider({
     };
 
     void initializeAuth();
-  }, []);
+  }, [refreshSession]);
+
+  useEffect(() => {
+  setUnauthorizedHandler(
+    async () => {
+      try {
+        const response =
+  await api.post<{
+    accessToken: string;
+  }>(
+    "/auth/refresh",
+    {},
+    undefined,
+    false,
+  );
+
+        const token =
+          response.data.accessToken;
+
+        setAccessToken(token);
+
+        await loadCurrentUser(token);
+
+        return token;
+      } catch {
+        setUser(null);
+        setAccessToken(null);
+
+        return null;
+      }
+    },
+  );
+}, []);
 
   return (
     <AuthContext.Provider
@@ -101,6 +185,7 @@ export function AuthProvider({
         accessToken,
         loading,
         register,
+        login,
         refreshSession,
         logout,
       }}
@@ -122,4 +207,4 @@ export const useAuth = () => {
   return context;
 };
 
-// global auth handler in client
+ // gloal auth handler in client
