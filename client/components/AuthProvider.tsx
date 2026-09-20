@@ -176,7 +176,7 @@ export function AuthProvider({
       }
     },
   );
-}, []);
+}, [loadCurrentUser]);
 
   return (
     <AuthContext.Provider
