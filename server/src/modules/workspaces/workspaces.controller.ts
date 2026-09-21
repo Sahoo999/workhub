@@ -38,3 +38,34 @@ export const createWorkspace = async (
     next(error);
   }
 };
+
+export const getWorkspaces = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      next(
+        new AppError(
+          "Authentication required",
+          401,
+          "AUTHENTICATION_REQUIRED",
+        ),
+      );
+      return;
+    }
+
+    const workspaces =
+      await workspaceService.getWorkspaces(
+        req.user.id,
+      );
+
+    res.status(200).json({
+      success: true,
+      data: workspaces,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

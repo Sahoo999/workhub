@@ -67,3 +67,37 @@ export const findMembership = async (
 
   return rows[0] ?? null;
 };
+
+export interface WorkspaceListRecord {
+  id: string;
+  name: string;
+  created_by: string;
+  created_at: Date;
+  updated_at: Date;
+  role: string;
+}
+
+export const findWorkspacesByUserId = async (
+  userId: string,
+): Promise<WorkspaceListRecord[]> => {
+  const { rows } =
+    await pool.query<WorkspaceListRecord>(
+      `
+        SELECT
+          w.id,
+          w.name,
+          w.created_by,
+          w.created_at,
+          w.updated_at,
+          wm.role
+        FROM workspaces w
+        INNER JOIN workspace_members wm
+          ON wm.workspace_id = w.id
+        WHERE wm.user_id = $1
+        ORDER BY w.created_at DESC
+      `,
+      [userId],
+    );
+
+  return rows;
+};

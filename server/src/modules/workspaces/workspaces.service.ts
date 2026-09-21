@@ -61,3 +61,11 @@ export const createWorkspace = async (
     client.release();
   }
 };
+
+export const getWorkspaces = async (
+  userId: string,
+) => {
+  return workspaceRepository.findWorkspacesByUserId(
+    userId,
+  );
+};
