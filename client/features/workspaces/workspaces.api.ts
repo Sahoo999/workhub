@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 
-import type { Workspace } from "./workspace.types";
+import type { Workspace, WorkspaceDetail } from "./workspace.types";
 
 export const getWorkspaces = async (
   accessToken: string,
@@ -24,6 +24,19 @@ export const createWorkspace = async (
     await api.post<Workspace>(
       "/workspaces",
       data,
+      accessToken,
+    );
+
+  return response.data;
+};
+
+export const getWorkspace = async (
+  accessToken: string,
+  workspaceId: string,
+): Promise<WorkspaceDetail> => {
+  const response =
+    await api.get<WorkspaceDetail>(
+      `/workspaces/${workspaceId}`,
       accessToken,
     );
 

@@ -69,3 +69,22 @@ export const getWorkspaces = async (
     userId,
   );
 };
+
+export const getWorkspace = async (
+  workspaceId: string,
+) => {
+  const workspace =
+    await workspaceRepository.findWorkspaceById(
+      workspaceId,
+    );
+
+  if (!workspace) {
+    throw new AppError(
+      "Workspace not found",
+      404,
+      "WORKSPACE_NOT_FOUND",
+    );
+  }
+
+  return workspace;
+};

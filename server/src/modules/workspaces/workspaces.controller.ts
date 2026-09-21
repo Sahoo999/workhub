@@ -69,3 +69,37 @@ export const getWorkspaces = async (
     next(error);
   }
 };
+
+export const getWorkspace = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const workspaceId =
+      req.params.workspaceId;
+
+    if (!workspaceId || typeof workspaceId !== "string") {
+      next(
+        new AppError(
+          "Workspace ID is required",
+          400,
+          "WORKSPACE_ID_REQUIRED",
+        ),
+      );
+      return;
+    }
+
+    const workspace =
+      await workspaceService.getWorkspace(
+        workspaceId,
+      );
+
+    res.status(200).json({
+      success: true,
+      data: workspace,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

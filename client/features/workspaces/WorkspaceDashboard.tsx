@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import Link from "next/link";
+
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/components/AuthProvider";
 
@@ -133,18 +135,15 @@ export default function WorkspaceDashboard() {
 
             {workspaces.map(
               (workspace) => (
-                <article
-                  key={workspace.id}
-                >
-                  <h3>
-                    {workspace.name}
-                  </h3>
-
-                  <p>
-                    Role:{" "}
-                    {workspace.role}
-                  </p>
-                </article>
+                <Link
+  key={workspace.id}
+  href={`/workspaces/${workspace.id}`}
+>
+  <article>
+    <h3>{workspace.name}</h3>
+    <p>Role: {workspace.role}</p>
+  </article>
+</Link>
               ),
             )}
           </section>

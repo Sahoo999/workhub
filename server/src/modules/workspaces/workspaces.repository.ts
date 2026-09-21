@@ -101,3 +101,33 @@ export const findWorkspacesByUserId = async (
 
   return rows;
 };
+
+export interface WorkspaceDetailRecord {
+  id: string;
+  name: string;
+  created_by: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export const findWorkspaceById = async (
+  workspaceId: string,
+): Promise<WorkspaceDetailRecord | null> => {
+  const { rows } =
+    await pool.query<WorkspaceDetailRecord>(
+      `
+        SELECT
+          id,
+          name,
+          created_by,
+          created_at,
+          updated_at
+        FROM workspaces
+        WHERE id = $1
+        LIMIT 1
+      `,
+      [workspaceId],
+    );
+
+  return rows[0] ?? null;
+};
