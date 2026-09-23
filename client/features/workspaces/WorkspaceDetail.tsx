@@ -9,9 +9,20 @@ import {
   getWorkspace,
 } from "./workspaces.api";
 
+import {
+  getProjects,
+} from "@/features/projects/projects.api";
+
+import CreateProjectForm from "@/features/projects/CreateProjectForm";
+import ProjectList from "@/features/projects/ProjectList";
+
 import type {
   WorkspaceDetail as WorkspaceDetailType,
 } from "./workspace.types";
+
+import type {
+  Project,
+} from "@/features/projects/project.types";
 
 interface WorkspaceDetailProps {
   workspaceId: string;
@@ -24,6 +35,9 @@ export default function WorkspaceDetail({
 
   const [workspace, setWorkspace] =
     useState<WorkspaceDetailType | null>(null);
+
+  const [projects, setProjects] =
+    useState<Project[]>([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -41,13 +55,22 @@ export default function WorkspaceDetail({
         setLoading(true);
         setError("");
 
-        const data =
-          await getWorkspace(
+        const [
+          workspaceData,
+          projectData,
+        ] = await Promise.all([
+          getWorkspace(
             accessToken,
             workspaceId,
-          );
+          ),
+          getProjects(
+            accessToken,
+            workspaceId,
+          ),
+        ]);
 
-        setWorkspace(data);
+        setWorkspace(workspaceData);
+        setProjects(projectData);
       } catch (error) {
         if (error instanceof ApiError) {
           setError(error.message);
@@ -63,6 +86,15 @@ export default function WorkspaceDetail({
 
     void loadWorkspace();
   }, [accessToken, workspaceId]);
+
+  const handleProjectCreated = (
+    project: Project,
+  ) => {
+    setProjects((current) => [
+      project,
+      ...current,
+    ]);
+  };
 
   if (loading) {
     return <p>Loading workspace...</p>;
@@ -82,18 +114,26 @@ export default function WorkspaceDetail({
 
   return (
     <main>
-      <h1>{workspace.name}</h1>
+      <section>
+        <h1>{workspace.name}</h1>
 
-      <p>
-        Workspace ID: {workspace.id}
-      </p>
+        <p>
+          Workspace ID: {workspace.id}
+        </p>
+      </section>
 
-      <p>
-        Created:{" "}
-        {new Date(
-          workspace.created_at,
-        ).toLocaleString()}
-      </p>
+      <section>
+        <CreateProjectForm
+          workspaceId={workspaceId}
+          onCreated={
+            handleProjectCreated
+          }
+        />
+      </section>
+
+      <ProjectList
+        projects={projects}
+      />
     </main>
   );
 }
