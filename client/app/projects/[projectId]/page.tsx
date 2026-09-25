@@ -19,6 +19,8 @@ import type {
   Project,
 } from "@/features/projects/project.types";
 
+import TaskDashboard from "@/features/tasks/TaskDashboard";
+
 export default function ProjectPage() {
   const params = useParams<{
     projectId: string;
@@ -115,6 +117,10 @@ export default function ProjectPage() {
           Workspace ID:{" "}
           {project.workspace_id}
         </p>
+
+        <TaskDashboard
+  projectId={projectId}
+        />
       </main>
     </ProtectedRoute>
   );
