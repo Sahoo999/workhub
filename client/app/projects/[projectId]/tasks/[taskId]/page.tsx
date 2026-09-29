@@ -22,6 +22,8 @@ import type {
   TaskStatus,
 } from "@/features/tasks/task.types";
 
+import ActivityTimeline from "@/features/activity/ActivityTimeline";
+
 import CommentSection from "@/features/comments/CommentSection";
 
 const STATUS_OPTIONS: TaskStatus[] = [
@@ -338,9 +340,14 @@ export default function TaskDetailPage() {
         </section>
 
         <CommentSection
-          taskId={task.id}
-          accessToken={accessToken}
-        />
+  taskId={task.id}
+  accessToken={accessToken}
+/>
+
+<ActivityTimeline
+  taskId={task.id}
+  accessToken={accessToken}
+/>
       </main>
     </ProtectedRoute>
   );
