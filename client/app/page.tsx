@@ -10,31 +10,14 @@ import {
   Users,
 } from "lucide-react";
 
+import HeroBackground from "@/components/hero-background";
+
 export default function HomePage() {
   return (
     <main
-      className="relative min-h-screen overflow-hidden bg-[#030712] text-white"
-      style={{
-        backgroundImage:
-          "radial-gradient(circle at 15% 0%, rgba(37,99,235,0.30), transparent 28%), radial-gradient(circle at 85% 5%, rgba(124,58,237,0.28), transparent 30%), radial-gradient(circle at 55% 38%, rgba(14,165,233,0.12), transparent 34%), radial-gradient(circle at 25% 75%, rgba(79,70,229,0.10), transparent 30%), linear-gradient(135deg, #020617 0%, #061126 45%, #0b0620 100%)",
-      }}
+      className="relative min-h-screen overflow-hidden bg-black text-white"
     >
-      {/* subtle background texture */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.035]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)",
-          backgroundSize: "64px 64px",
-        }}
-      />
-
-      {/* top atmospheric glow */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[-260px] h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-blue-500/10 blur-[140px]"
-      />
+      <HeroBackground />
 
       {/* =====================================================
           HEADER
