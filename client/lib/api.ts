@@ -77,20 +77,27 @@ const request = async <T>(
   }
 
   const response = await fetch(
-    `${API_URL}${path}`,
-    {
-      ...options,
-      headers,
-      credentials: "include",  // tells the browser to automatically attach security cookies
+  `${API_URL}${path}`,
+  {
+    ...options,
+    headers,
+    credentials: "include",  // tells the browser to automatically attach security cookies
                                //  and session tokens whenever you communicate with your backend server
-      body:
-        options.body !== undefined
-          ? JSON.stringify(options.body)
-          : undefined,
-    },
-  );
+    body:
+      options.body !== undefined
+        ? JSON.stringify(options.body)
+        : undefined,
+  },
+);
 
-  const json = await response.json();
+if (response.status === 204) {
+  return {
+    success: true,
+    data: undefined as T,
+  };
+}
+
+const json = await response.json();
 
   if (
     response.status === 401 &&

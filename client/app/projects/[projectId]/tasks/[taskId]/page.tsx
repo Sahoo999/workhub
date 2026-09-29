@@ -26,6 +26,9 @@ import ActivityTimeline from "@/features/activity/ActivityTimeline";
 
 import CommentSection from "@/features/comments/CommentSection";
 
+import { getProject } from "@/features/projects/projects.api";
+import LabelManager from "@/features/labels/LabelManager";
+
 const STATUS_OPTIONS: TaskStatus[] = [
   "TODO",
   "IN_PROGRESS",
@@ -57,6 +60,8 @@ export default function TaskDetailPage() {
 
   const [task, setTask] = useState<Task | null>(null);
 
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(true);
 
   const [saving, setSaving] = useState(false);
@@ -64,44 +69,67 @@ export default function TaskDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (authLoading || !accessToken) {
-      return;
+  if (authLoading || !accessToken) {
+    return;
+  }
+
+  let cancelled = false;
+
+  const loadData = async () => {
+    try {
+      const [taskData, projectData] =
+        await Promise.all([
+          getTask(
+            accessToken,
+            taskId,
+          ),
+          getProject(
+            accessToken,
+            projectId,
+          ),
+        ]);
+
+      if (cancelled) {
+        return;
+      }
+
+      setTask(taskData);
+      setWorkspaceId(
+        projectData.workspace_id,
+      );
+      setError(null);
+    } catch (error) {
+      if (cancelled) {
+        return;
+      }
+
+      if (error instanceof ApiError) {
+        setError(error.message);
+      } else {
+        setError(
+          "Failed to load task.",
+        );
+      }
+    } finally {
+      if (cancelled) {
+        return;
+      }
+
+      setLoading(false);
     }
+  };
 
-    let cancelled = false;
+  void loadData();
 
-    getTask(accessToken, taskId)
-      .then((data) => {
-        if (cancelled) {
-          return;
-        }
-
-        setTask(data);
-        setError(null);
-      })
-      .catch((error) => {
-        if (cancelled) {
-          return;
-        }
-
-        if (error instanceof ApiError) {
-          setError(error.message);
-        } else {
-          setError("Failed to load task.");
-        }
-      })
-      .finally(() => {
-        if (cancelled) {
-          return;
-        }
-
-        setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [authLoading, accessToken, taskId]);
+  return () => {
+    cancelled = true;
+  };
+}, [
+  authLoading,
+  accessToken,
+  taskId,
+  projectId,
+]);
 
   const handleStatusChange = async (
     status: TaskStatus,
@@ -339,7 +367,14 @@ export default function TaskDetailPage() {
           </div>
         </section>
 
-        <CommentSection
+        {workspaceId && (
+  <LabelManager
+    workspaceId={workspaceId}
+    taskId={task.id}
+  />
+)}
+
+<CommentSection
   taskId={task.id}
   accessToken={accessToken}
 />
