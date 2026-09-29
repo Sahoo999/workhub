@@ -8,6 +8,7 @@ import {
 import Link from "next/link";
 
 import { useRouter } from "next/navigation";
+import MemberManager from "./MemberManager";
 
 import {
   ArrowLeft,
@@ -381,44 +382,49 @@ export default function WorkspaceDetail({
 
             {/* Workspace stats */}
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-xl border bg-muted/30 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-background">
-                    <FolderKanban className="h-4 w-4" />
-                  </div>
+  <div className="rounded-xl border bg-muted/30 p-4">
+    <div className="flex items-center gap-3">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-background">
+        <FolderKanban className="h-4 w-4" />
+      </div>
 
-                  <div>
-                    <p className="text-2xl font-bold leading-none">
-                      {projects.length}
-                    </p>
+      <div>
+        <p className="text-2xl font-bold leading-none">
+          {projects.length}
+        </p>
 
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {projects.length === 1
-                        ? "Project"
-                        : "Projects"}
-                    </p>
-                  </div>
-                </div>
-              </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {projects.length === 1
+            ? "Project"
+            : "Projects"}
+        </p>
+      </div>
+    </div>
+  </div>
 
-              <div className="rounded-xl border bg-muted/30 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-background">
-                    <Users className="h-4 w-4" />
-                  </div>
+  <a
+    href="#members"
+    className="group rounded-xl border bg-muted/30 p-4 transition-colors hover:bg-muted/50"
+  >
+    <div className="flex items-center gap-3">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-background">
+        <Users className="h-4 w-4" />
+      </div>
 
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold">
-                      Team
-                    </p>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold">
+          Team
+        </p>
 
-                    <p className="text-xs text-muted-foreground">
-                      Workspace members
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <p className="text-xs text-muted-foreground">
+          Manage workspace members
+        </p>
+      </div>
+
+      <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+    </div>
+  </a>
+</div>
           </div>
         </section>
 
@@ -549,6 +555,15 @@ export default function WorkspaceDetail({
             </div>
           )}
         </section>
+
+        <section
+  id="members"
+  className="scroll-mt-20 space-y-5"
+>
+  <MemberManager
+    workspaceId={workspaceId}
+  />
+</section>
       </div>
     </ProtectedWorkspacePage>
   );

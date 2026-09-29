@@ -169,4 +169,17 @@ export const api = {
       },
       accessToken,
     ),
+  
+  delete: async <T>(
+    path: string,
+    accessToken?: string,
+  ): Promise<ApiSuccess<T>> => {
+    return request<T>(
+      path,
+      {
+        method: "DELETE",
+      },
+      accessToken,
+    );
+  },
 };

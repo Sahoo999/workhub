@@ -20,6 +20,7 @@ import labelsRouter from "./modules/labels/labels.routes.js";
 
 import activityRouter from "./modules/activity/activity.routes.js";
 import notificationsRouter from "./modules/notifications/notifications.routes.js";
+import membersRoutes from "./modules/workspace-members/members.routes.js";
 
 const app = express();
 
@@ -53,6 +54,10 @@ app.use("/api/v1", activityRouter);
 app.use(
   "/api/v1/notifications",
   notificationsRouter,
+);
+app.use(
+  "/api/v1/workspaces/:workspaceId/members",
+  membersRoutes,
 );
 app.use(notFoundHandler);
 app.use(errorHandler);
