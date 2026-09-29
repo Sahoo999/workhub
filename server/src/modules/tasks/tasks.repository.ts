@@ -1,4 +1,5 @@
 import { pool } from "../../db/client.js";
+import type { PoolClient } from "pg";
 
 export interface TaskRecord {
   id: string;
@@ -53,13 +54,67 @@ export const createTask = async (
     ],
   );
 
-    const task = rows[0];
+  const task = rows[0];
 
-if (!task) {
-  throw new Error("Task was not created");
-}
+  if (!task) {
+    throw new Error("Task was not created");
+  }
 
-return task;
+  return task;
+};
+
+/**
+ * Creates a task using an existing database transaction.
+ *
+ * The caller must already have started the transaction with BEGIN.
+ */
+export const createTaskTx = async (
+  client: PoolClient,
+  projectId: string,
+  userId: string,
+  data: {
+    title: string;
+    description: string | null;
+    status: string;
+    priority: string;
+    assignedTo: string | null;
+    dueDate: Date | null;
+  },
+): Promise<TaskRecord> => {
+  const { rows } = await client.query<TaskRecord>(
+    `
+      INSERT INTO tasks (
+        project_id,
+        title,
+        description,
+        status,
+        priority,
+        assigned_to,
+        created_by,
+        due_date
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      RETURNING *
+    `,
+    [
+      projectId,
+      data.title,
+      data.description,
+      data.status,
+      data.priority,
+      data.assignedTo,
+      userId,
+      data.dueDate,
+    ],
+  );
+
+  const task = rows[0];
+
+  if (!task) {
+    throw new Error("Task was not created");
+  }
+
+  return task;
 };
 
 export const findTaskById = async (
@@ -88,18 +143,17 @@ type SortOrder = "asc" | "desc";
 export const listTasks = async (
   projectId: string,
   options: {
-  offset: number;
-  limit: number;
-  status?: string | undefined;
-  priority?: string | undefined;
-  assignedTo?: string | undefined;
-  search?: string | undefined;
-  sortBy: TaskSortColumn;
-  order: SortOrder;
-},
+    offset: number;
+    limit: number;
+    status?: string | undefined;
+    priority?: string | undefined;
+    assignedTo?: string | undefined;
+    search?: string | undefined;
+    sortBy: TaskSortColumn;
+    order: SortOrder;
+  },
 ): Promise<TaskRecord[]> => {
   const values: unknown[] = [projectId];
-
   let parameterIndex = 2;
 
   let query = `
@@ -144,6 +198,7 @@ export const listTasks = async (
     ];
 
   query += ` ORDER BY ${sortColumn} ${options.order.toUpperCase()}`;
+
   query += ` LIMIT $${parameterIndex}`;
   values.push(options.limit);
   parameterIndex++;
@@ -173,11 +228,11 @@ export const countTasks = async (
 
   const row = rows[0];
 
-if (!row) {
-  throw new Error("Failed to count tasks");
-}
+  if (!row) {
+    throw new Error("Failed to count tasks");
+  }
 
-return Number(row.count);
+  return Number(row.count);
 };
 
 export const updateTask = async (
@@ -218,9 +273,60 @@ export const updateTask = async (
 
   const task = rows[0];
 
-if (!task) {
-  throw new Error("Task was not updated");
-}
+  if (!task) {
+    throw new Error("Task was not updated");
+  }
 
-return task;
+  return task;
+};
+
+/**
+ * Updates a task using an existing database transaction.
+ *
+ * The caller must already have started the transaction with BEGIN.
+ */
+export const updateTaskTx = async (
+  client: PoolClient,
+  taskId: string,
+  data: {
+    title: string;
+    description: string | null;
+    status: string;
+    priority: string;
+    assignedTo: string | null;
+    dueDate: Date | null;
+  },
+): Promise<TaskRecord> => {
+  const { rows } = await client.query<TaskRecord>(
+    `
+      UPDATE tasks
+      SET
+        title = $1,
+        description = $2,
+        status = $3,
+        priority = $4,
+        assigned_to = $5,
+        due_date = $6,
+        updated_at = NOW()
+      WHERE id = $7
+      RETURNING *
+    `,
+    [
+      data.title,
+      data.description,
+      data.status,
+      data.priority,
+      data.assignedTo,
+      data.dueDate,
+      taskId,
+    ],
+  );
+
+  const task = rows[0];
+
+  if (!task) {
+    throw new Error("Task was not updated");
+  }
+
+  return task;
 };

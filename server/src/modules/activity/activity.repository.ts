@@ -1,4 +1,5 @@
 import { pool } from "../../db/client.js";
+import type { PoolClient } from "pg";
 
 export type ActivityInput = {
   workspaceId: string;
@@ -9,10 +10,11 @@ export type ActivityInput = {
   metadata?: Record<string, unknown>;
 };
 
-export const createActivity = async (
+export const createActivityTx = async (
+  client: PoolClient,
   data: ActivityInput,
 ): Promise<void> => {
-  await pool.query(
+  await client.query(
     `
       INSERT INTO activity_logs (
         workspace_id,

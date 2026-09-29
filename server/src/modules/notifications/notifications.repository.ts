@@ -1,4 +1,5 @@
 import { pool } from "../../db/client.js";
+import type { PoolClient } from "pg";
 
 export interface NotificationRecord {
   id: string;
@@ -51,6 +52,62 @@ export const createNotification = async (
       entityId,
     ],
   );
+
+  const notification = rows[0];
+
+  if (!notification) {
+    throw new Error("Notification was not created");
+  }
+
+  return notification;
+};
+
+/**
+ * Creates a notification using an existing database transaction.
+ *
+ * The caller must already have started a transaction with BEGIN.
+ */
+export const createNotificationTx = async (
+  client: PoolClient,
+  userId: string,
+  type: string,
+  title: string,
+  message: string,
+  entityType: string | null,
+  entityId: string | null,
+): Promise<NotificationRecord> => {
+  const { rows } =
+    await client.query<NotificationRecord>(
+      `
+        INSERT INTO notifications (
+          user_id,
+          type,
+          title,
+          message,
+          entity_type,
+          entity_id
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING
+          id,
+          user_id,
+          type,
+          title,
+          message,
+          entity_type,
+          entity_id,
+          read_at,
+          created_at
+      `,
+      [
+        userId,
+        type,
+        title,
+        message,
+        entityType,
+        entityId,
+      ],
+    );
 
   const notification = rows[0];
 
