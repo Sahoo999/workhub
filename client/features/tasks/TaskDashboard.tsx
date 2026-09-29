@@ -24,10 +24,13 @@ import type {
 
 interface TaskDashboardProps {
   projectId: string;
+  workspaceId: string;
 }
+
 
 export default function TaskDashboard({
   projectId,
+  workspaceId,
 }: TaskDashboardProps) {
   const { accessToken } = useAuth();
 
@@ -162,8 +165,9 @@ export default function TaskDashboard({
     <section>
       <CreateTaskForm
         projectId={projectId}
-        onCreated={
-          handleTaskCreated
+  workspaceId={workspaceId}
+  onCreated={
+    handleTaskCreated
         }
       />
 

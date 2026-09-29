@@ -120,7 +120,8 @@ export default function ProjectPage() {
 
         <TaskDashboard
   projectId={projectId}
-        />
+  workspaceId={project.workspace_id}
+/>
       </main>
     </ProtectedRoute>
   );

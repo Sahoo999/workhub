@@ -2,11 +2,14 @@
 
 import {
   FormEvent,
+  useEffect,
   useState,
 } from "react";
 
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/components/AuthProvider";
+
+import { getMembers } from "@/features/workspaces/members.api";
 
 import {
   createTaskFormSchema,
@@ -17,17 +20,23 @@ import {
 } from "./tasks.api";
 
 import type { Task } from "./task.types";
+import type { WorkspaceMember } from "@/features/workspaces/member.types";
 
 interface CreateTaskFormProps {
   projectId: string;
+  workspaceId: string;
   onCreated: (task: Task) => void;
 }
 
 export default function CreateTaskForm({
   projectId,
+  workspaceId,
   onCreated,
 }: CreateTaskFormProps) {
   const { accessToken } = useAuth();
+
+  const [members, setMembers] =
+    useState<WorkspaceMember[]>([]);
 
   const [title, setTitle] =
     useState("");
@@ -51,14 +60,69 @@ export default function CreateTaskForm({
       "URGENT"
     >("MEDIUM");
 
+  const [assignedTo, setAssignedTo] =
+    useState("");
+
   const [dueDate, setDueDate] =
     useState("");
 
   const [loading, setLoading] =
     useState(false);
 
+  const [membersLoading, setMembersLoading] =
+    useState(true);
+
   const [error, setError] =
     useState("");
+
+  useEffect(() => {
+    if (!accessToken) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadMembers = async () => {
+      try {
+        const result =
+          await getMembers(
+            accessToken,
+            workspaceId,
+          );
+
+        if (cancelled) {
+          return;
+        }
+
+        setMembers(result);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        if (error instanceof ApiError) {
+          setError(error.message);
+        } else {
+          setError(
+            "Unable to load workspace members.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setMembersLoading(false);
+        }
+      }
+    };
+
+    void loadMembers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    accessToken,
+    workspaceId,
+  ]);
 
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>,
@@ -88,7 +152,6 @@ export default function CreateTaskForm({
         result.error.issues[0]?.message ??
           "Invalid task data",
       );
-
       return;
     }
 
@@ -101,11 +164,18 @@ export default function CreateTaskForm({
           projectId,
           {
             title: result.data.title,
+
             description:
               result.data.description ||
               undefined,
+
             status: result.data.status,
+
             priority: result.data.priority,
+
+            assignedTo:
+              assignedTo || undefined,
+
             dueDate:
               result.data.dueDate ||
               undefined,
@@ -116,6 +186,7 @@ export default function CreateTaskForm({
       setDescription("");
       setStatus("TODO");
       setPriority("MEDIUM");
+      setAssignedTo("");
       setDueDate("");
 
       onCreated(task);
@@ -236,6 +307,39 @@ export default function CreateTaskForm({
       </div>
 
       <div>
+        <label htmlFor="task-assignee">
+          Assign to
+        </label>
+
+        <select
+          id="task-assignee"
+          value={assignedTo}
+          onChange={(event) =>
+            setAssignedTo(
+              event.target.value,
+            )
+          }
+          disabled={
+            loading ||
+            membersLoading
+          }
+        >
+          <option value="">
+            Unassigned
+          </option>
+
+          {members.map((member) => (
+            <option
+              key={member.user_id}
+              value={member.user_id}
+            >
+              {member.name} ({member.email})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
         <label htmlFor="task-due-date">
           Due date
         </label>
@@ -254,13 +358,16 @@ export default function CreateTaskForm({
       </div>
 
       {error && (
-        <p role="alert">{error}</p>
+        <p role="alert">
+          {error}
+        </p>
       )}
 
       <button
         type="submit"
         disabled={
-          loading || !title.trim()
+          loading ||
+          !title.trim()
         }
       >
         {loading
