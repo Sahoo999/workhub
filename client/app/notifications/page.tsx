@@ -48,6 +48,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+import { getTask } from "@/features/tasks/tasks.api";
+
 export default function NotificationsPage() {
   const {
     accessToken,
@@ -65,6 +67,9 @@ export default function NotificationsPage() {
 
   const [processingId, setProcessingId] =
     useState<string | null>(null);
+
+  const [taskHrefs, setTaskHrefs] =
+  useState<Record<string, string>>({});
 
   const unreadCount = useMemo(
     () =>
@@ -132,6 +137,80 @@ export default function NotificationsPage() {
     authLoading,
   ]);
 
+  useEffect(() => {
+  if (
+    authLoading ||
+    !accessToken ||
+    notifications.length === 0
+  ) {
+    return;
+  }
+
+  let cancelled = false;
+
+  const loadTaskHrefs = async () => {
+    const taskNotifications =
+      notifications.filter(
+        (notification) =>
+          notification.entity_type === "TASK" &&
+          notification.entity_id,
+      );
+
+    if (taskNotifications.length === 0) {
+      return;
+    }
+
+    const entries =
+      await Promise.all(
+        taskNotifications.map(
+          async (notification) => {
+            try {
+              const task =
+                await getTask(
+                  accessToken,
+                  notification.entity_id!,
+                );
+
+              return [
+                notification.id,
+                `/projects/${task.project_id}/tasks/${task.id}`,
+              ] as const;
+            } catch {
+              return null;
+            }
+          },
+        ),
+      );
+
+    if (cancelled) {
+      return;
+    }
+
+    const nextHrefs: Record<string, string> = {};
+
+    for (const entry of entries) {
+      if (entry) {
+        const [notificationId, href] =
+          entry;
+
+        nextHrefs[notificationId] = href;
+      }
+    }
+
+    setTaskHrefs(nextHrefs);
+  };
+
+  void loadTaskHrefs();
+
+  return () => {
+    cancelled = true;
+  };
+}, [
+  authLoading,
+  accessToken,
+  notifications,
+]);
+
   const handleMarkAsRead =
     async (
       notification: Notification,
@@ -192,15 +271,16 @@ export default function NotificationsPage() {
   }
 
   if (
-    notification.entity_type ===
-    "TASK"
+    notification.entity_type === "TASK"
   ) {
-    return null;
+    return (
+      taskHrefs[notification.id] ??
+      null
+    );
   }
 
   if (
-    notification.entity_type ===
-    "PROJECT"
+    notification.entity_type === "PROJECT"
   ) {
     return `/projects/${notification.entity_id}`;
   }
