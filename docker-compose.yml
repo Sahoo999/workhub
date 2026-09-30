@@ -6,7 +6,7 @@ services:
 
     environment:
       POSTGRES_DB: workhub
-      POSTGRES_USER: postgres
+      POSTGRES_USER: workhub
       POSTGRES_PASSWORD: "1234"
 
     ports:
@@ -39,7 +39,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5000
-      DATABASE_URL: postgresql://postgres:1234@postgres:5432/workhub
+      DATABASE_URL: postgresql://workhub:workhub_password@postgres:5432/workhub
 
     ports:
       - "5000:5000"
@@ -47,6 +47,25 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:5000/api/v1
+
+    container_name: workhub-client
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      - server
 
 volumes:
   workhub_postgres_data:
