@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: workhub-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: workhub
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "1234"
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - workhub_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U postgres -d workhub",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+
+    container_name: workhub-server
+    restart: unless-stopped
+
+    env_file:
+      - ./server/.env
+
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:1234@postgres:5432/workhub
+
+    ports:
+      - "5000:5000"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  workhub_postgres_data:
