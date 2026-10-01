@@ -18,11 +18,11 @@ ADD CONSTRAINT task_priority_check CHECK (
     )
 );
 
-# speeds up queries that look up tasks inside a specific project
+-- speeds up queries that look up tasks inside a specific project
 CREATE INDEX idx_tasks_project_id ON tasks (project_id);
 
-# speeds up queries that look up work assigned to a specific user
+-- speeds up queries that look up work assigned to a specific user
 CREATE INDEX idx_tasks_assigned_to ON tasks (assigned_to);
 
-# optimizes queries that filter tasks by their current state
+-- optimizes queries that filter tasks by their current state
 CREATE INDEX idx_tasks_status ON tasks (status);
