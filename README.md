@@ -541,8 +541,3 @@ architecture, API design, PostgreSQL, authentication, and application
 delivery.
 
 ------------------------------------------------------------------------
-
-::: {align="center"}
-**WorkHub --- from database schema to a Dockerized full-stack
-application.**
-:::
